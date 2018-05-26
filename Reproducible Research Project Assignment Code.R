@@ -1,0 +1,89 @@
+## Read the data from downloaded csv file
+rd_data<- read.csv("C:/Users/lynn.linlin.rao/Desktop/Learning/Coursera/Reproducible Research/activity.csv")
+rd<- rd_data
+
+##Preview the data and the class
+names(rd)
+[1] "steps"    "date"     "interval"
+
+str(rd)
+'data.frame':   17568 obs. of  3 variables:
+ $ steps   : int  NA NA NA NA NA NA NA NA NA NA ...
+ $ date    : Factor w/ 61 levels "2012-10-01","2012-10-02",..: 1 1 1 1 1 1 1 1 1 1 ...
+ $ interval: int  0 5 10 15 20 25 30 35 40 45 ...
+
+## Converted date into a variable of “Date” class.
+
+rd$date<- as.Date(rd$date)
+
+##What is mean total number of steps taken per day?
+#17568 observations over 61 days period in the study. We firstly need to calculate the total number of steps on each day, so, 'tapply' function to do this.
+TotalSteps_Daily<- with(rd, tapply(steps, date, sum, na.rm=TRUE))
+
+#Make the histogram of total steps taken each day.
+hist(TotalSteps_Daily, col = "green")
+
+#Next is to report the mean and median of total number of steps taken each day.
+meanStep<-round(mean(TotalSteps_Daily), 2)
+medianStep<-round(median(TotalSteps_Daily), 2)
+> meanStep
+[1] 9354.23
+> medianStep
+[1] 10395
+
+
+##What is the average daily activity pattern?
+#For this analysis, we need to calculate average steps taken on each 15 minutes interval.
+intervalSteps<- with(rd, tapply(steps, interval, mean, na.rm=TRUE))
+
+#Then we can plot the mean step value for each interval. And 'base plotting system' is sufficient for this analysis.
+ plot(intervalSteps,axes = F, type="l", col="blue", xlab="Time", ylab="Average Number of Steps", main="Average Daily Activity Pattern")
+ axis(1,at=c(0, 36, 72, 108, 144, 180, 216, 252, 288), label = c("0:00", "3:00","6:00", "9:00", "12:00","15:00","18:00","21:00","24:00"))
+ axis(2)
+# To get maximum average steps taken.
+intervalSteps[which.max(intervalSteps)]
+#     835 
+#206.1698 
+
+##Imputing missing values
+#Calculate and report the total number of missing values in the dataset (i.e. the total number of rows with \color{red}{\verb|NA|}NAs)
+
+countNA<- sum(is.na(rd$steps))
+> countNA
+[1] 2304
+
+#So there are 2304 rows with missing value for 'Steps' .
+
+#Create a new dataset that is equal to the original dataset but with the missing data filled in.
+
+rd2<-rd
+sapply(rd2, class)
+    steps      date  interval 
+"integer"    "Date" "integer" 
+
+rd2$steps[is.na(rd2$steps)]<- mean(na.omit(rd$steps))
+rd2$date<- as.Date(rd2$date, format = "%Y-%m-%d")
+
+# Make a histogram of the total number of steps taken each day and Calculate and report the mean and median total number of steps taken per day. Do these values differ from the estimates from the first part of the assignment? What is the impact of imputing missing data on the estimates of the total daily number of steps?
+
+TotalSteps_Daily2<- with(rd2, tapply(steps, date, sum, na.rm=TRUE))
+par(mfrow = c(1, 2))
+hist(TotalSteps_Daily, col = "green",main="With NAs")
+hist(TotalSteps_Daily2, col = "green",main = "NAs filled")
+
+
+## Are there differences in activity patterns between weekdays and weekends?
+
+#Create a new factor variable in the dataset with two levels – “weekday” and “weekend” indicating whether a given date is a weekday or weekend day.
+rd2$weekday<- factor(format(rd2$date, "%A"))
+levels(rd2$weekday)<- list(weekday = c("Monday", "Tuesday","Wednesday", "Thursday","Friday"), weekend =c("Saturday", "Sunday"))
+
+#Make a panel plot containing a time series plot (i.e. \color{red}{\verb|type = "l"|}type="l") of the 5-minute interval (x-axis) and the average number of steps taken, averaged across all weekday days or weekend days (y-axis). See the README file in the GitHub repository to see an example of what this plot should look like using simulated data.
+> par(mfrow = c(2, 1))
+> with(rd2[rd2$weekday == "weekend",], plot(aggregate(steps ~ interval, FUN = mean), type = "l", main = "Weekends"))
+> with(rd2[rd2$weekday == "weekday",], plot(aggregate(steps ~ interval, FUN = mean), type = "l", main = "Weekdays"))
+> dev.off()
+null device 
+          1 
+
+
